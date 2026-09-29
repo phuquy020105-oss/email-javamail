@@ -3,53 +3,64 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Check Your Email</title>
+    <title>Đang chờ phê duyệt</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 40px;
-            color: #000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 75vh;
+            margin: 0;
+            color: #333;
         }
-        h1 {
+        .spinner {
+            width: 55px;
+            height: 55px;
+            border: 6px solid #f3f3f3;
+            border-top: 6px solid #008080;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 25px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        h2 {
             color: #008080;
-            font-size: 32px;
-            margin-bottom: 20px;
+            margin-bottom: 12px;
+            font-size: 24px;
         }
         p {
             font-size: 16px;
-            line-height: 1.5;
-        }
-        .box {
-            margin-top: 25px;
-            padding: 15px;
-            background: #eef7ff;
-            border-left: 4px solid #008080;
-            width: fit-content;
-        }
-        .btn-confirm {
-            display: inline-block;
-            margin-top: 10px;
-            padding: 8px 16px;
-            background: #008080;
-            color: #fff;
-            text-decoration: none;
-            border-radius: 3px;
-            font-weight: bold;
-        }
-        .btn-confirm:hover {
-            background: #006666;
+            color: #666;
+            margin: 0;
         }
     </style>
 </head>
 <body>
-<h1>Almost there!</h1>
-<p>A confirmation email has been sent to <b>${user.email}</b>.</p>
-<p>Please check your inbox (and Spam folder) to confirm your subscription.</p>
+<div class="spinner"></div>
+<h2>Đang chờ xác nhận từ quản trị viên...</h2>
+<p>Vui lòng giữ nguyên màn hình, hệ thống sẽ tự động chuyển trang ngay khi được phê duyệt.</p>
 
-<!-- Nút kích hoạt xác nhận trực tiếp cho demo/chấm bài -->
-<div class="box">
-    <p style="margin: 0; font-size: 14px; color: #555;">Kích hoạt nhanh (dành cho kiểm thử / demo):</p>
-    <a href="emailList?action=confirm&email=${user.email}" class="btn-confirm">Xác nhận đăng ký ngay</a>
-</div>
+<script>
+    const email = "${user.email}";
+
+    // Cứ mỗi 1.5 giây gửi yêu cầu kiểm tra xem bạn đã bấm duyệt trong mail chưa
+    const timer = setInterval(() => {
+        fetch("emailList?action=check_status&email=" + encodeURIComponent(email))
+            .then(res => res.json())
+            .then(data => {
+                if (data.approved) {
+                    clearInterval(timer);
+                    // Tự động chuyển thẳng sang màn hình Thanks
+                    window.location.href = "emailList?action=view_thanks&email=" + encodeURIComponent(email);
+                }
+            })
+            .catch(err => console.log(err));
+    }, 1500);
+</script>
 </body>
 </html>

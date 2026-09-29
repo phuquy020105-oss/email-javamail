@@ -47,11 +47,11 @@ public class EmailListServlet extends HttpServlet {
                 message = "Please fill out all three text boxes.";
                 url = "/index.jsp";
             } else {
+                user.setActive(false);
                 UserDB.insert(user);
 
                 String domainUrl = "https://" + request.getServerName() + request.getContextPath();
 
-                // Mã hóa dữ liệu truyền trực tiếp trên URL để không bao giờ bị mất thông tin
                 String encFirst = URLEncoder.encode(firstName, StandardCharsets.UTF_8);
                 String encLast = URLEncoder.encode(lastName, StandardCharsets.UTF_8);
                 String encEmail = URLEncoder.encode(email, StandardCharsets.UTF_8);
@@ -59,27 +59,49 @@ public class EmailListServlet extends HttpServlet {
                 String approveLink = domainUrl + "/emailList?action=admin_approve&email=" + encEmail
                         + "&firstName=" + encFirst + "&lastName=" + encLast;
 
-                // Email gửi về hộp thư của BẠN (phuquy020105@gmail.com)
+                // Gửi email về cho BẠN (phuquy020105@gmail.com)
                 String adminSubject = "[Phê Duyệt] Yêu cầu đăng ký từ: " + lastName + " " + firstName;
                 String adminBody = "<div style='font-family: Arial, sans-serif; font-size: 15px; line-height: 1.6;'>"
-                        + "<h3>Có yêu cầu đăng ký Email List mới:</h3>"
+                        + "<h3>Có người dùng đăng ký vào Email List:</h3>"
                         + "<p><b>Họ và tên:</b> " + lastName + " " + firstName + "</p>"
                         + "<p><b>Email:</b> " + email + "</p>"
                         + "<br>"
-                        + "<p>Nhấn vào liên kết dưới đây để duyệt và kích hoạt tài khoản:</p>"
+                        + "<p>Nhấn vào liên kết dưới đây để phê duyệt cho tài khoản này:</p>"
                         + "<p><a href='" + approveLink + "' style='background: #008080; color: #ffffff; padding: 10px 20px; text-decoration: none; border-radius: 4px; font-weight: bold; display: inline-block;'>XÁC NHẬN / PHÊ DUYỆT NGAY</a></p>"
                         + "</div>";
 
                 MailUtilGmail.sendMail(MailUtilGmail.ADMIN_EMAIL, adminSubject, adminBody);
 
+                // Chuyển sang trang màn hình xoay tròn chờ duyệt
                 url = "/check_email.jsp";
             }
 
             request.setAttribute("user", user);
             request.setAttribute("message", message);
 
+        } else if (action.equals("check_status")) {
+            // Kiểm tra trạng thái kích hoạt ngầm
+            String email = request.getParameter("email");
+            User user = UserDB.getUser(email);
+            boolean isApproved = (user != null && user.isActive());
+
+            response.setContentType("application/json");
+            response.getWriter().write("{\"approved\": " + isApproved + "}");
+            return;
+
+        } else if (action.equals("view_thanks")) {
+            // Khi người dùng được duyệt, tự động chuyển về đây để nạp giao diện Thanks
+            String email = request.getParameter("email");
+            User user = UserDB.getUser(email);
+            if (user != null) {
+                request.setAttribute("user", user);
+                url = "/thanks.jsp";
+            } else {
+                url = "/index.jsp";
+            }
+
         } else if (action.equals("admin_approve")) {
-            // Khi BẠN click vào link trong Gmail:
+            // Khi BẠN click vào liên kết duyệt trong hòm thư cá nhân
             String email = request.getParameter("email");
             String firstName = request.getParameter("firstName");
             String lastName = request.getParameter("lastName");
@@ -87,25 +109,20 @@ public class EmailListServlet extends HttpServlet {
             if (firstName == null) firstName = "";
             if (lastName == null) lastName = "";
 
-            User user = new User(firstName, lastName, email);
+            User user = UserDB.getUser(email);
+            if (user == null) {
+                user = new User(firstName, lastName, email);
+            }
             user.setActive(true);
             UserDB.insert(user);
 
-            // Gửi thông báo xác nhận thành công tới email admin để kiểm tra nội dung
-            String userSubject = "Xác nhận đăng ký thông tin tài khoản thành công";
-            String userBody = "<div style='font-family: Arial, sans-serif; font-size: 15px; line-height: 1.6;'>"
-                    + "<p>Chào " + lastName + ",</p>"
-                    + "<p>Hệ thống xác nhận bạn đã đăng ký thông tin thành công.<br>"
-                    + "Thông tin tài khoản (" + email + ") đã được lưu trữ trên cơ sở dữ liệu.</p>"
-                    + "<p>Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua thư này.</p>"
-                    + "<p>Trân trọng,<br>Bộ phận hỗ trợ kỹ thuật</p>"
-                    + "</div>";
-
-            MailUtilGmail.sendMail(MailUtilGmail.ADMIN_EMAIL, userSubject, userBody);
-
-            // Chuyển thẳng sang trang Thanks for joining our email list
-            request.setAttribute("user", user);
-            url = "/thanks.jsp";
+            // Màn hình trình duyệt khi bạn bấm phê duyệt xong
+            response.setContentType("text/html; charset=UTF-8");
+            response.getWriter().write("<div style='font-family: Arial, sans-serif; text-align: center; margin-top: 60px;'>"
+                    + "<h2 style='color: #008080;'>Đã xác nhận thành công!</h2>"
+                    + "<p>Màn hình của người đăng ký (" + email + ") đang được kích hoạt và chuyển sang trang hoàn tất.</p>"
+                    + "</div>");
+            return;
         }
 
         ServletContext sc = getServletContext();
