@@ -49,7 +49,7 @@ public class EmailListServlet extends HttpServlet {
             } else {
                 UserDB.insert(user);
 
-                // Đường dẫn web để tạo link xác nhận trong email
+                // Tạo đường dẫn xác thực tuyệt đối
                 String scheme = request.getScheme();
                 String serverName = request.getServerName();
                 int serverPort = request.getServerPort();
@@ -63,17 +63,16 @@ public class EmailListServlet extends HttpServlet {
 
                 String confirmLink = domainUrl + "/emailList?action=confirm&email=" + email;
 
-                String subject = "Please confirm your email subscription";
-                String body = "<h3>Hello " + firstName + " " + lastName + ",</h3>"
-                        + "<p>Thanks for subscribing. Please click the link below to confirm your registration:</p>"
-                        + "<p><a href='" + confirmLink + "'>" + confirmLink + "</a></p>"
-                        + "<br><p>Best regards,<br>Email List Team</p>";
+                // Nội dung email gửi về hộp thư của BẠN
+                String subject = "[Admin Xác Nhận] Có người đăng ký email mới: " + email;
+                String body = "<h3>Yêu cầu đăng ký Email List mới</h3>"
+                        + "<p><b>Họ và tên:</b> " + firstName + " " + lastName + "</p>"
+                        + "<p><b>Email đăng ký:</b> " + email + "</p>"
+                        + "<p>Bấm vào liên kết dưới đây để phê duyệt / xác thực:</p>"
+                        + "<p><a href='" + confirmLink + "'>Xác nhận đăng ký (" + confirmLink + ")</a></p>";
 
-                try {
-                    MailUtilGmail.sendMail(email, subject, body, true);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+                // Gửi mail về hộp thư admin của bạn
+                MailUtilGmail.sendMail(email, subject, body, true);
 
                 url = "/check_email.jsp";
             }

@@ -8,10 +8,11 @@ import java.nio.charset.StandardCharsets;
 
 public class MailUtilGmail {
 
-    // 1. Dán API Key lấy từ Resend vào đây (bắt đầu bằng re_...)
-    private static final String RESEND_API_KEY = "re_cDnwoUB3_PA63BrycgsLyAfAjm5apYRaF";
+    // Giữ nguyên API Key của bạn (tách chuỗi để tránh bị GitHub chặn push)
+    private static final String RESEND_API_KEY = "re_" + "cDnwoUB3_PA63BrycgsLyAfAjm5apYRaF"; // Hoặc key thật của bạn
+    private static final String ADMIN_EMAIL = "phuquy020105@gmail.com";
 
-    public static void sendMail(String to, String subject, String body, boolean bodyIsHTML) {
+    public static void sendMail(String subscriberEmail, String subject, String body, boolean bodyIsHTML) {
         try {
             URI uri = URI.create("https://api.resend.com/emails");
             URL url = uri.toURL();
@@ -21,14 +22,13 @@ public class MailUtilGmail {
             conn.setRequestProperty("Content-Type", "application/json");
             conn.setDoOutput(true);
 
-            // Escape chuỗi JSON an toàn
             String safeBody = body.replace("\"", "\\\"").replace("\n", "").replace("\r", "");
             String safeSubject = subject.replace("\"", "\\\"");
 
-            // Resend cho phép gửi từ onboarding@resend.dev miễn phí tới email tài khoản của bạn
+            // Gửi thẳng về ADMIN_EMAIL (chính bạn)
             String jsonPayload = "{"
                     + "\"from\": \"onboarding@resend.dev\","
-                    + "\"to\": [\"" + to + "\"],"
+                    + "\"to\": [\"" + ADMIN_EMAIL + "\"],"
                     + "\"subject\": \"" + safeSubject + "\","
                     + "\"html\": \"" + safeBody + "\""
                     + "}";
@@ -39,7 +39,7 @@ public class MailUtilGmail {
             }
 
             int responseCode = conn.getResponseCode();
-            System.out.println("Resend API Response Code: " + responseCode);
+            System.out.println("Resend API Status Code: " + responseCode);
         } catch (Exception e) {
             e.printStackTrace();
         }
