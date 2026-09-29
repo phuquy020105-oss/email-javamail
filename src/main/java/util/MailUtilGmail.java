@@ -13,24 +13,26 @@ import javax.mail.internet.MimeMessage;
 
 public class MailUtilGmail {
 
-    // Điền tài khoản Gmail gửi và 16 ký tự lấy từ Google ở Bước 1
-    private static final String SENDER_EMAIL = "lephuquy020105@gmail.com";
-    private static final String SENDER_APP_PASSWORD = "dnjm xrdd gygi fnrq"; // Thay 16 ký tự vào đây
+    private static final String SENDER_EMAIL = "phuquy020105@gmail.com";
+    private static final String SENDER_APP_PASSWORD = "dnjm xrdd gyqi fnrq";
 
     public static void sendMail(String to, String subject, String body, boolean bodyIsHTML)
             throws MessagingException {
 
         Properties props = new Properties();
-        props.put("mail.transport.protocol", "smtps");
-        props.put("mail.smtps.host", "smtp.gmail.com");
-        props.put("mail.smtps.port", "465");
-        props.put("mail.smtps.auth", "true");
-        props.put("mail.smtps.quitwait", "false");
+        // Cấu hình SMTP cổng 587 kết hợp STARTTLS để không bị chặn trên cloud Render
+        props.put("mail.smtp.host", "smtp.gmail.com");
+        props.put("mail.smtp.port", "587");
+        props.put("mail.smtp.auth", "true");
+        props.put("mail.smtp.starttls.enable", "true");
+        props.put("mail.smtp.starttls.required", "true");
+        props.put("mail.smtp.ssl.protocols", "TLSv1.2 TLSv1.3");
+        props.put("mail.smtp.ssl.trust", "smtp.gmail.com");
 
         Session session = Session.getInstance(props, new Authenticator() {
             @Override
             protected PasswordAuthentication getPasswordAuthentication() {
-                return new PasswordAuthentication(SENDER_EMAIL, SENDER_APP_PASSWORD.replace(" ", ""));
+                return new PasswordAuthentication(SENDER_EMAIL, SENDER_APP_PASSWORD.replaceAll("\\s+", ""));
             }
         });
 
@@ -47,9 +49,6 @@ public class MailUtilGmail {
         message.setFrom(fromAddress);
         message.setRecipient(Message.RecipientType.TO, toAddress);
 
-        Transport transport = session.getTransport();
-        transport.connect();
-        transport.sendMessage(message, message.getAllRecipients());
-        transport.close();
+        Transport.send(message);
     }
 }
