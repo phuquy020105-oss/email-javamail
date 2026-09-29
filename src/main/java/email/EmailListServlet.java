@@ -31,6 +31,7 @@ public class EmailListServlet extends HttpServlet {
 
         if (action.equals("join")) {
             url = "/index.jsp";
+
         } else if (action.equals("add")) {
             String firstName = request.getParameter("firstName");
             String lastName = request.getParameter("lastName");
@@ -49,7 +50,7 @@ public class EmailListServlet extends HttpServlet {
             } else {
                 UserDB.insert(user);
 
-                // Tạo đường dẫn xác thực tuyệt đối
+                // Lấy URL hiện tại của Render
                 String scheme = request.getScheme();
                 String serverName = request.getServerName();
                 int serverPort = request.getServerPort();
@@ -61,31 +62,50 @@ public class EmailListServlet extends HttpServlet {
                 }
                 domainUrl += contextPath;
 
-                String confirmLink = domainUrl + "/emailList?action=confirm&email=" + email;
+                // Link xác nhận dành riêng cho BẠN (Admin) bấm phê duyệt
+                String approveLink = domainUrl + "/emailList?action=admin_approve&email=" + email;
 
-                // Nội dung email gửi về hộp thư của BẠN
-                String subject = "[Admin Xác Nhận] Có người đăng ký email mới: " + email;
-                String body = "<h3>Yêu cầu đăng ký Email List mới</h3>"
-                        + "<p><b>Họ và tên:</b> " + firstName + " " + lastName + "</p>"
-                        + "<p><b>Email đăng ký:</b> " + email + "</p>"
-                        + "<p>Bấm vào liên kết dưới đây để phê duyệt / xác thực:</p>"
-                        + "<p><a href='" + confirmLink + "'>Xác nhận đăng ký (" + confirmLink + ")</a></p>";
+                // Gửi thư thông báo về hòm thư của BẠN
+                String adminSubject = "[Yêu Cầu Phê Duyệt] Người dùng mới đăng ký: " + firstName + " " + lastName;
+                String adminBody = "<div style='font-family: Arial, sans-serif; font-size: 15px;'>"
+                        + "<h3>Có một người dùng vừa gửi thông tin đăng ký:</h3>"
+                        + "<p><b>Họ và tên:</b> " + lastName + " " + firstName + "</p>"
+                        + "<p><b>Email:</b> " + email + "</p>"
+                        + "<br>"
+                        + "<p>Vui lòng bấm vào nút bên dưới để xác nhận phê duyệt:</p>"
+                        + "<p><a href='" + approveLink + "' style='background:#008080; color:#fff; padding:10px 18px; text-decoration:none; border-radius:4px; font-weight:bold; display:inline-block;'>Phê duyệt & Gửi mail xác nhận</a></p>"
+                        + "</div>";
 
-                // Gửi mail về hộp thư admin của bạn
-                MailUtilGmail.sendMail(email, subject, body, true);
+                MailUtilGmail.sendMail(MailUtilGmail.ADMIN_EMAIL, adminSubject, adminBody);
 
-                url = "/check_email.jsp";
+                // Trên màn hình web của người đăng ký: Chuyển thẳng sang trang Thanks for joining (Ảnh 1)
+                url = "/thanks.jsp";
             }
 
             request.setAttribute("user", user);
             request.setAttribute("message", message);
 
-        } else if (action.equals("confirm")) {
+        } else if (action.equals("admin_approve")) {
+            // Khi BẠN mở mail và bấm nút Phê duyệt:
             String email = request.getParameter("email");
             User user = UserDB.getUser(email);
 
             if (user != null) {
                 user.setActive(true);
+
+                // Gửi thư kích hoạt tài khoản thành công đến email của người đăng ký (Nội dung đúng như Ảnh 2 của bạn)
+                String userSubject = "Xác nhận đăng ký thông tin tài khoản";
+                String userBody = "<div style='font-family: Arial, sans-serif; font-size: 15px; line-height: 1.6;'>"
+                        + "<p>Chào " + user.getLastName() + ",</p>"
+                        + "<p>Hệ thống xác nhận bạn đã đăng ký thông tin thành công.<br>"
+                        + "Thông tin tài khoản của bạn đã được lưu trữ trên cơ sở dữ liệu.</p>"
+                        + "<p>Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua thư này.</p>"
+                        + "<p>Trân trọng,<br>Bộ phận hỗ trợ kỹ thuật</p>"
+                        + "</div>";
+
+                // Gửi mail cho khách
+                MailUtilGmail.sendMail(email, userSubject, userBody);
+
                 request.setAttribute("user", user);
                 url = "/thanks.jsp";
             } else {

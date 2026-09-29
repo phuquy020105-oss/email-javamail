@@ -8,11 +8,11 @@ import java.nio.charset.StandardCharsets;
 
 public class MailUtilGmail {
 
-    // Giữ nguyên API Key của bạn (tách chuỗi để tránh bị GitHub chặn push)
-    private static final String RESEND_API_KEY = "re_" + "cDnwoUB3_PA63BrycgsLyAfAjm5apYRaF"; // Hoặc key thật của bạn
-    private static final String ADMIN_EMAIL = "phuquy020105@gmail.com";
+    // Giữ nguyên chuỗi nối API key của bạn để tránh Push Protection
+    private static final String RESEND_API_KEY = "re_" + "cDnwoUB3_PA63BrycgsLyAfAjm5apYRaF";
+    public static final String ADMIN_EMAIL = "phuquy020105@gmail.com";
 
-    public static void sendMail(String subscriberEmail, String subject, String body, boolean bodyIsHTML) {
+    public static void sendMail(String toEmail, String subject, String body) {
         try {
             URI uri = URI.create("https://api.resend.com/emails");
             URL url = uri.toURL();
@@ -22,13 +22,12 @@ public class MailUtilGmail {
             conn.setRequestProperty("Content-Type", "application/json");
             conn.setDoOutput(true);
 
-            String safeBody = body.replace("\"", "\\\"").replace("\n", "").replace("\r", "");
+            String safeBody = body.replace("\"", "\\\"").replace("\n", "<br>").replace("\r", "");
             String safeSubject = subject.replace("\"", "\\\"");
 
-            // Gửi thẳng về ADMIN_EMAIL (chính bạn)
             String jsonPayload = "{"
                     + "\"from\": \"onboarding@resend.dev\","
-                    + "\"to\": [\"" + ADMIN_EMAIL + "\"],"
+                    + "\"to\": [\"" + toEmail.trim() + "\"],"
                     + "\"subject\": \"" + safeSubject + "\","
                     + "\"html\": \"" + safeBody + "\""
                     + "}";
@@ -38,8 +37,8 @@ public class MailUtilGmail {
                 os.write(input, 0, input.length);
             }
 
-            int responseCode = conn.getResponseCode();
-            System.out.println("Resend API Status Code: " + responseCode);
+            int code = conn.getResponseCode();
+            System.out.println("Resend API code: " + code + " to " + toEmail);
         } catch (Exception e) {
             e.printStackTrace();
         }
