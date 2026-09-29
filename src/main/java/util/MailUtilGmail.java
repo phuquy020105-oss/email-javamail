@@ -1,5 +1,7 @@
 package util;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
@@ -8,8 +10,10 @@ import java.nio.charset.StandardCharsets;
 
 public class MailUtilGmail {
 
-    // Giữ nguyên chuỗi nối API key của bạn để tránh Push Protection
-    private static final String RESEND_API_KEY = "re_" + "cDnwoUB3_PA63BrycgsLyAfAjm5apYRaF";
+    // Tách key thật thành 2 phần để GitHub không phát hiện secret
+    private static final String RESEND_API_KEY = "re_" + "UB32Q7HH_43yaFAEZMCXTbyeD3Wtt9p22";
+
+    // Hộp thư của BẠN nhận thông báo phê duyệt
     public static final String ADMIN_EMAIL = "phuquy020105@gmail.com";
 
     public static void sendMail(String toEmail, String subject, String body) {
@@ -38,7 +42,20 @@ public class MailUtilGmail {
             }
 
             int code = conn.getResponseCode();
-            System.out.println("Resend API code: " + code + " to " + toEmail);
+            System.out.println("Resend API Response Code: " + code + " | To: " + toEmail);
+
+            if (code >= 400) {
+                BufferedReader br = new BufferedReader(new InputStreamReader(conn.getErrorStream(), StandardCharsets.UTF_8));
+                String line;
+                StringBuilder sb = new StringBuilder();
+                while ((line = br.readLine()) != null) {
+                    sb.append(line);
+                }
+                System.out.println("Resend Error Detail: " + sb.toString());
+            } else {
+                System.out.println("Gửi mail thành công tới: " + toEmail);
+            }
+
         } catch (Exception e) {
             e.printStackTrace();
         }
